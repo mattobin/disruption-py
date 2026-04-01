@@ -5,6 +5,8 @@
 Physics methods for MAST.
 """
 
+from sqlalchemy.sql.operators import is_
+
 import numpy as np
 
 from disruption_py.core.physics_method.caching import cache_method
@@ -49,8 +51,23 @@ class MastPhysicsMethods:
         ip_prog_time = conn.get_data(params.shot_id, "pulse_schedule/time")
         magtime = conn.get_data(params.shot_id, "summary/time")
 
-        dip_dt = MastUtilMethods.gradient_1d(magtime, ip)
-        dipprog_dt = MastUtilMethods.gradient_1d(ip_prog_time, ip_prog)
+        is_valid_ip = not (np.isnan(ip).all() or len(ip) < 2 or len(magtime) != len(ip))
+        is_valid_ip_prog = not (
+            np.isnan(ip_prog).all()
+            or len(ip_prog) < 2
+            or len(ip_prog_time) != len(ip_prog)
+        )
+
+        if not is_valid_ip:
+            dip_dt = np.full_like(ip, np.nan)
+        else:
+            dip_dt = np.gradient(ip, magtime)
+
+        if not is_valid_ip_prog:
+            dipprog_dt = np.full_like(ip_prog, np.nan)
+        else:
+            dipprog_dt = np.gradient(ip_prog, ip_prog_time)
+
         times = params.times
 
         ip = MastUtilMethods.interpolate_1d(magtime, ip, times)
@@ -242,12 +259,7 @@ class MastPhysicsMethods:
         """
 
         if np.isnan(n_e).all():
-            # Edge case: n_e is NaN, return NaN for all outputs
-            return {
-                "n_e": n_e,
-                "dn_dt": np.full_like(n_e, np.nan),
-                "greenwald_fraction": np.full_like(n_e, np.nan),
-            }
+            raise CalculationError("n_e is NaN for all time points")
 
         if len(n_e) != len(t_n):
             raise CalculationError("n_e and t_n are different lengths")
