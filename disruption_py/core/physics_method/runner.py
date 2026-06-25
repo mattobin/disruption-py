@@ -262,7 +262,7 @@ def populate_shot(
                     # as expected
                     data[k] = v
                     continue
-                if all(np.isnan(v)):
+                if np.all(np.isnan(v)):
                     # pad all-nan var
                     physics_method_params.logger.debug("All-nan data: {col}", col=k)
                     data[k] = np.nan * times

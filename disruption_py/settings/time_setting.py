@@ -765,6 +765,36 @@ class SharedTimeSetting(TimeSetting):
         return times[np.where((times >= tmin) & (times <= tmax))]
 
 
+class TMDBTimeSetting(TimeSetting):
+    """
+    Time setting for the TMDB, which uses a fixed timebase of 1 ms.
+    """
+    def _get_times(self, params: TimeSettingParams) -> np.ndarray:
+        """
+        Parameters
+        ----------
+        params : TimeSettingParams
+            Parameters needed to retrieve the timebase.
+
+        Returns
+        -------
+        np.ndarray
+            Array of times in the timebase.
+        """
+        (efit_time,) = params.data_conn.get_dims(
+            r"\efit_aeqdsk:ali", tree_name="_efit_tree", astype="float64"
+        )
+
+        max_time = np.max(efit_time)
+        if params.tokamak == Tokamak.CMOD:
+            tmdb_time = np.round(np.arange(0, max_time + 1e-3, 1e-3), 3)
+            efit_time_unit = "s"
+        if params.tokamak == Tokamak.D3D:
+            tmdb_time = np.round(np.arange(0, max_time + 1, 1), 0)
+            efit_time_unit = "ms"
+        return _postprocess(times=tmdb_time, units=efit_time_unit)
+
+
 # --8<-- [start:time_setting_dict]
 _time_setting_mappings: Dict[str, TimeSetting] = {
     "efit": EfitTimeSetting(),
@@ -777,6 +807,7 @@ _time_setting_mappings: Dict[str, TimeSetting] = {
     },
     "ip": IpTimeSetting(),
     "ip_efit": SharedTimeSetting([IpTimeSetting(), EfitTimeSetting()]),
+    "tmdb":TMDBTimeSetting(),
 }
 # --8<-- [end:time_setting_dict]
 
