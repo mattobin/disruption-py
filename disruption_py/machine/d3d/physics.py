@@ -1845,9 +1845,11 @@ class D3DPhysicsMethods:
                 Poloidal flux at the plasma boundary from the EFIT data.
             - 'psin' : array
                 Normalized poloidal flux values.
+            - 'rmaxis' : array
+                R of magnetic axis from the EFIT data.
         """
         path = r"\top.results.geqdsk:"
-        nodes = ["z", "r", "rhovn", "psirz", "zmaxis", "ssimag", "ssibry"]
+        nodes = ["z", "r", "rhovn", "psirz", "zmaxis", "ssimag", "ssibry", "rmaxis"]
         (efit_dict_time,) = params.get_dims(
             f"{path}psirz", tree_name="_efit_tree", dim_nums=[2]
         )
